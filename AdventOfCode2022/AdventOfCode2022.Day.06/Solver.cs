@@ -1,10 +1,11 @@
 ﻿using AdventOfCode2022.Common.Abstraction;
+using System.IO;
 
 namespace AdventOfCode2022.Day._06
 {
     public class Solver : ISolver
     {
-        public string Title => "2022 - ";
+        public string Title => "2022 - Day 6: Tuning Trouble";
 
         public async Task<string> PartOne()
         {
@@ -70,6 +71,4 @@ namespace AdventOfCode2022.Day._06
             return (indexOfStartOfStream + indexOfStartMessage).ToString();
         }
     }
-
-
 }
