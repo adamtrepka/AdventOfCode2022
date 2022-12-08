@@ -1,4 +1,5 @@
-﻿using AdventOfCode2022.Common.Abstraction;
+﻿using AdventOfCode2022.Common;
+using AdventOfCode2022.Common.Abstraction;
 using System.Runtime.CompilerServices;
 
 namespace AdventOfCode2022.Day._08
@@ -18,9 +19,9 @@ namespace AdventOfCode2022.Day._08
             var grid = JaggedToMultidimensional(list);
 
             var xMin = 0;
-            var xMax = list.First().Length - 1;
+            var xMax = list.First().Length;
             var yMin = 0;
-            var yMax = list.Length - 1;
+            var yMax = list.Length;
 
             var counter = 0;
 
@@ -56,7 +57,43 @@ namespace AdventOfCode2022.Day._08
 
         public async Task<string> PartTwo()
         {
-            throw new NotImplementedException();
+            var lines = await System.IO.File.ReadAllLinesAsync("./202208.txt");
+
+            int[][] list = lines
+                   .Select(l => l.Select(i => int.Parse(i.ToString())).ToArray())
+                   .ToArray();
+
+            var grid = JaggedToMultidimensional(list);
+
+            var xMin = 0;
+            var xMax = list.First().Length;
+            var yMin = 0;
+            var yMax = list.Length;
+
+            var maxScore = 0;
+
+            for (int y = 0; y < yMax; y++)
+            {
+                for (int x = 0; x < xMax; x++)
+                {
+                    var tree = grid[y, x];
+
+                    var left = CountScore(GetRow(grid, y).Take(x).Reverse(), tree);
+                    var right = CountScore(GetRow(grid, y).Skip(x + 1), tree);
+
+                    var top = CountScore(GetColumn(grid, x).Take(y).Reverse(), tree);
+                    var bottom = CountScore(GetColumn(grid, x).Skip(y + 1), tree);
+
+                    var score = left * right * top * bottom;
+
+                    if (maxScore < score)
+                    {
+                        maxScore = score;
+                    }
+                }
+            }
+
+            return maxScore.ToString();
         }
 
         public T[,] JaggedToMultidimensional<T>(T[][] jaggedArray)
@@ -87,6 +124,20 @@ namespace AdventOfCode2022.Day._08
             return Enumerable.Range(0, matrix.GetLength(1))
                     .Select(x => matrix[rowNumber, x])
                     .ToArray();
+        }
+
+        public int CountScore(IEnumerable<int> neighbours, int tree)
+        {
+            var score = 0;
+            foreach (var neightbour in neighbours)
+            {
+                score++;
+                if (neightbour >= tree)
+                {
+                    break;
+                }
+            }
+            return score;
         }
     }
 }
