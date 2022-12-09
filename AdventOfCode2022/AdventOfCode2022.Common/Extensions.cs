@@ -20,6 +20,8 @@ namespace AdventOfCode2022.Common
                                       .AsImplementedInterfaces()
                                       .WithSingletonLifetime());
 
+            services.AddSingleton<ITextFileReader, TextFileReader>();
+
             return services;
         }
     }

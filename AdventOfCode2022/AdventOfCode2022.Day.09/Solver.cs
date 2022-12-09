@@ -12,6 +12,13 @@ namespace AdventOfCode2022.Day._09
         private const string left = "L";
         private const string right = "R";
 
+        private readonly ITextFileReader _textFileReader;
+
+        public Solver(ITextFileReader textFileReader)
+        {
+            _textFileReader = textFileReader ?? throw new ArgumentNullException(nameof(textFileReader));
+        }
+
         public string Title => "2022 - Day 9: Rope Bridge";
 
         public async Task<string> PartOne()
@@ -21,7 +28,7 @@ namespace AdventOfCode2022.Day._09
             var snake = Enumerable.Range(0, lengthOfSnake).Select(x => new Point()).ToArray();
             var visited = new HashSet<Point>();
 
-            var lines = await System.IO.File.ReadAllLinesAsync("./202209.txt");
+            var lines = await _textFileReader.ReadAllLinesAsync("./202209.txt");
 
             foreach (var line in lines)
             {
@@ -48,7 +55,7 @@ namespace AdventOfCode2022.Day._09
             var snake = Enumerable.Range(0, lengthOfSnake).Select(x => new Point()).ToArray();
             var visited = new HashSet<Point>();
 
-            var lines = await System.IO.File.ReadAllLinesAsync("./202209.txt");
+            var lines = await _textFileReader.ReadAllLinesAsync("./202209.txt");
 
             foreach (var line in lines)
             {
