@@ -16,10 +16,10 @@ namespace AdventOfCode2022.Day._09
 
         public async Task<string> PartOne()
         {
-            var head = new Point(0, 0);
-            var tail = new Point(0, 0);
+            var lengthOfSnake = 2;
 
-            var tailPositions = new HashSet<string>();
+            var snake = Enumerable.Range(0, lengthOfSnake).Select(x => new Point()).ToArray();
+            var visited = new HashSet<Point>();
 
             var lines = await System.IO.File.ReadAllLinesAsync("./202209.txt");
 
@@ -30,68 +30,82 @@ namespace AdventOfCode2022.Day._09
                 var direction = command.First();
                 var length = int.Parse(command.Last());
 
+                var moveAction = GetActionToMoveTheSnakeHead(direction);
+
                 for (int i = 0; i < length; i++)
                 {
-                    switch (direction)
-                    {
-                        case up:
-                            head.Y--;
-                            break;
-                        case down:
-                            head.Y++;
-                            break;
-                        case left:
-                            head.X--;
-                            break;
-                        case right:
-                            head.X++;
-                            break;
-                    }
-
-                    if (head.X == tail.X && Math.Abs(head.Y - tail.Y) == 1)
-                    {
-                        tail.Y = head.Y;
-                    }
-                    else if (head.Y == tail.Y && Math.Abs(head.X - tail.X) == 1)
-                    {
-                        tail.X = head.X;
-                    }
-                    else if (Math.Abs(head.X - tail.X) == 1 && Math.Abs(head.Y - tail.Y) == 1)
-                    {
-                        tail.X = head.X;
-                        tail.Y = head.Y;
-                    }
-                    else if (Math.Abs(head.X - tail.X) == 2 && Math.Abs(head.Y - tail.Y) == 2)
-                    {
-                        if (head.X < tail.X)
-                        {
-                            tail.X--;
-                        }
-                        else
-                        {
-                            tail.X++;
-                        }
-                        if (head.Y < tail.Y)
-                        {
-                            tail.Y--;
-                        }
-                        else
-                        {
-                            tail.Y++;
-                        }
-                    }
-
-                    tailPositions.Add($"{tail.X},{tail.Y}");
-
+                    ApplyMoveForSnake(snake, moveAction);
+                    visited.Add(snake[lengthOfSnake -1]);
                 }
             }
-
-            return tailPositions.Count.ToString();
+            return visited.Count.ToString();
         }
 
         public async Task<string> PartTwo()
         {
-            throw new NotImplementedException();
+            var lengthOfSnake = 10;
+
+            var snake = Enumerable.Range(0, lengthOfSnake).Select(x => new Point()).ToArray();
+            var visited = new HashSet<Point>();
+
+            var lines = await System.IO.File.ReadAllLinesAsync("./202209.txt");
+
+            foreach (var line in lines)
+            {
+                var command = line.Split(' ');
+
+                var direction = command.First();
+                var length = int.Parse(command.Last());
+
+                var moveAction = GetActionToMoveTheSnakeHead(direction);
+
+                for (int i = 0; i < length; i++)
+                {
+                    ApplyMoveForSnake(snake, moveAction);
+                    visited.Add(snake[lengthOfSnake - 1]);
+                }
+            }
+            return visited.Count.ToString();
+        }
+
+        private Action<Point[]> GetActionToMoveTheSnakeHead(string direction)
+        {
+            return direction switch
+            {
+                right => (point) => ++point[0].X,
+                left => (point) => --point[0].X,
+                up => (point) => ++point[0].Y,
+                down => (point) => --point[0].Y
+            };
+        }
+
+        private void ApplyMoveForSnake(Point[] snake, Action<Point[]> moveHeadAction)
+        {
+            moveHeadAction.Invoke(snake);
+
+            for (var i = 1; i < snake.Length; ++i)
+            {
+                var current = snake[i];
+                var previous = snake[i - 1];
+
+                if (Math.Abs(previous.X - current.X) > 1)
+                {
+                    snake[i].X += previous.X > current.X ? 1 : -1;
+
+                    if (previous.Y != current.Y)
+                    {
+                        snake[i].Y += previous.Y > current.Y ? 1 : -1;
+                    }
+                }
+                else if (Math.Abs(previous.Y - current.Y) > 1)
+                {
+                    snake[i].Y += previous.Y > current.Y ? 1 : -1;
+                    if (previous.X != current.X)
+                    {
+                        snake[i].X += previous.X > current.X ? 1 : -1;
+                    }
+                }
+            }
         }
     }
 }
