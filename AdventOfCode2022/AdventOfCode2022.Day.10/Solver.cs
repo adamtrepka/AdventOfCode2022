@@ -61,12 +61,12 @@ namespace AdventOfCode2022.Day._10
 
             var stringBuilder = string.Empty;
 
-            foreach (var signal in cycles)
+            foreach (var signal in cycles.Take(240))
             {
                 var spriteMiddle = signal.X;
                 var screenColumn = signal.Index % 40;
 
-                stringBuilder += Math.Abs(spriteMiddle - screenColumn) < 2 ? "X" : ".";
+                stringBuilder += Math.Abs(spriteMiddle - screenColumn) < 2 ? "#" : ".";
 
                 if(screenColumn == 39)
                 {

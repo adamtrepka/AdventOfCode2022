@@ -342,7 +342,7 @@ namespace AdventOfCode2022.Tests.Day
                                  "######......######......######......####\n" +
                                  "#######.......#######.......#######.....";
 
-            Assert.AreEqual(expectedResult, result);
+            Assert.AreEqual(expectedResult.Replace("\n", string.Empty), result.Replace("\n", string.Empty));
         }
     }
 }
