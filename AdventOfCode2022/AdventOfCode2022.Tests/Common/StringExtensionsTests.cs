@@ -1,10 +1,5 @@
 ﻿using AdventOfCode2022.Common.Extensions;
-using Castle.DynamicProxy;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static AdventOfCode2022.Common.Extensions.StringExtensions;
 
 namespace AdventOfCode2022.Tests.Common
 {
@@ -31,7 +26,7 @@ namespace AdventOfCode2022.Tests.Common
                         "\r\n" +
                         "SecondLine";
 
-            var expectedResult = new[] { "FirstLine","", "SecondLine" };
+            var expectedResult = new[] { "FirstLine", "", "SecondLine" };
 
             var result = input.SplitByLine();
 
@@ -39,14 +34,38 @@ namespace AdventOfCode2022.Tests.Common
         }
 
         [DataTestMethod]
-        [DataRow("Monkey 0:", "Monkey (\\d+):","0")]
+        [DataRow("Monkey 0:", "Monkey (\\d+):", "0")]
         [DataRow("Operation: new = old * 10", "Operation: new = old \\* (\\d+)", "10")]
         [DataRow("addx 4", "addx (\\d+)", "4")]
         [DataRow("dir brhvclj", "dir (\\w+)", "brhvclj")]
         [DataRow("$ ls", "\\$ ls", "$ ls")]
-        public void TryMatchPattern_ForInputDataAndPattern_ShouldReturnExpectedResult(string line, string pattern, string expected)
+        public void TryMatchPattern_ForInputDataAndPattern_ShouldReturnStringWithExpectedResult(string line, string pattern, string expected)
         {
             var result = line.TryMatchPattern(pattern, out var argument);
+
+            Assert.IsTrue(result);
+            Assert.AreEqual(expected, argument);
+        }
+
+        [DataTestMethod]
+        [DataRow("Monkey 0:", "Monkey (\\d+):", 0)]
+        [DataRow("Operation: new = old * 10", "Operation: new = old \\* (\\d+)", 10)]
+        [DataRow("addx 4", "addx (\\d+)", 4)]
+        public void TryMatchPattern_WithCustomParseMethod_ForInputDataAndPattern_ShouldReturnWithExpectedResult(string line, string pattern, int expected)
+        {
+            var result = line.TryMatchPattern(pattern, (input) => int.Parse(input), out var argument);
+
+            Assert.IsTrue(result);
+            Assert.AreEqual(expected, argument);
+        }
+
+        [DataTestMethod]
+        [DataRow("Monkey 0:", "Monkey (\\d+):", 0)]
+        [DataRow("Operation: new = old * 10", "Operation: new = old \\* (\\d+)", 10)]
+        [DataRow("addx 4", "addx (\\d+)", 4)]
+        public void TryMatchPattern_WithCustomTryParseMethod_ForInputDataAndPattern_ShouldReturnWithExpectedResult(string line, string pattern, int expected)
+        {
+            var result = line.TryMatchPattern(pattern, (TryParse<int>) int.TryParse, out var argument);
 
             Assert.IsTrue(result);
             Assert.AreEqual(expected, argument);

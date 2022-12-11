@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 
 namespace AdventOfCode2022.Common.Extensions
 {
@@ -36,5 +30,42 @@ namespace AdventOfCode2022.Common.Extensions
                 return false;
             }
         }
+
+        public static bool TryMatchPattern<TResult>(this string input, string pattern, Func<string,TResult> parsingMethod, out TResult arg)
+        {
+            var match = Regex.Match(input, pattern);
+            if (match.Success)
+            {
+                var value = match.Groups[match.Groups.Count - 1].Value;
+                arg = parsingMethod(value);
+
+                return true;
+            }
+            else
+            {
+                arg = default;
+                return false;
+            }
+        }
+
+        public static bool TryMatchPattern<TResult>(this string input, string pattern, TryParse<TResult> parsingMethod, out TResult arg)
+        {
+            arg = default;
+
+            var match = Regex.Match(input, pattern);
+
+            if (match.Success)
+            {
+                var value = match.Groups[match.Groups.Count - 1].Value;
+
+                return parsingMethod(value, out arg);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public delegate bool TryParse<TResult>(string input, out TResult output);
     }
 }
