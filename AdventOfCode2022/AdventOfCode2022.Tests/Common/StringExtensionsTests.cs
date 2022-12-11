@@ -39,6 +39,7 @@ namespace AdventOfCode2022.Tests.Common
         [DataRow("addx 4", "addx (\\d+)", "4")]
         [DataRow("dir brhvclj", "dir (\\w+)", "brhvclj")]
         [DataRow("$ ls", "\\$ ls", "$ ls")]
+        [DataRow("Starting items: 69, 99, 95, 62", "Starting items: (.*)", "69, 99, 95, 62")]
         public void TryMatchPattern_ForInputDataAndPattern_ShouldReturnStringWithExpectedResult(string line, string pattern, string expected)
         {
             var result = line.TryMatchPattern(pattern, out var argument);
