@@ -8,9 +8,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AdventOfCode2022.Common
+namespace AdventOfCode2022.Common.Extensions
 {
-    public static class Extensions
+    public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddSolvers(this IServiceCollection services, IEnumerable<Assembly> assemblies)
         {
