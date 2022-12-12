@@ -34,9 +34,15 @@ namespace AdventOfCode2022.Tests.Day
         public async Task Part2_ForImputFromExample_ShouldReturn()
         {
             var fileReaderMock = new Mock<ITextFileReader>();
-            fileReaderMock.Setup(reader => reader.ReadAllTextAsync(It.IsAny<string>())).Returns(() =>
+            fileReaderMock.Setup(reader => reader.ReadAllLinesAsync(It.IsAny<string>())).Returns(() =>
             {
-                var result = "";
+                var result = new[] {
+                    "Sabqponm",
+                    "abcryxxl",
+                    "accszExk",
+                    "acctuvwj",
+                    "abdefghi"
+                };
 
                 return Task.FromResult(result);
             });
@@ -45,7 +51,7 @@ namespace AdventOfCode2022.Tests.Day
 
             var result = await solver.PartTwo();
 
-            Assert.AreEqual("", result);
+            Assert.AreEqual("29", result);
         }
     }
 }

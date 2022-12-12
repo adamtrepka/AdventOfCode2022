@@ -18,119 +18,178 @@ namespace AdventOfCode2022.Day._12
 
 
         private readonly string _aplhabet = "abcdefghijklmnopqrstuvwxyz";
-        private readonly char _startingPoint = 'S';
-        private readonly char _targetPoint = 'E';
+        private const char _startingPoint = 'S';
+        private const char _targetPoint = 'E';
         public string Title => "2022 - Day 12: Hill Climbing Algorithm";
 
         public async Task<string> PartOne()
         {
             var input = await _textFileReader.ReadAllLinesAsync("./202212.txt");
 
-            var visitedPoints = new HashSet<Point>();
+            List<Map.Point> currentPosition = new();
+            Dictionary<Map.Point, int> visitedPlaces = new();
 
-            var map = JaggedToMultidimensional(input.Select(line => line.Select(letter => letter).ToArray()).ToArray());
-
-            var startingPoint = FindPoint(map, _startingPoint);
-            var targetPoint = FindPoint(map, _targetPoint);
-
-            var currentPoint = startingPoint;
-
-            foreach (var path in FindShortestPath(map, startingPoint, targetPoint, visitedPoints))
+            var map = ParseMap(input, (y, x, value, map) =>
             {
+                return value switch
+                {
+                    _startingPoint => SetStart(y, x),
+                    _targetPoint => SetTarget(y, x),
+                    _ => new Map.Point(y, x, value - 'a')
+                };
 
-            }
+                Map.Point SetStart(int y, int x)
+                {
+                    var point = new Map.Point(y, x, 0);
+                    map.StartingPoints.Add(point);
 
-            return visitedPoints.Count.ToString();
+                    return point;
+                }
+
+                Map.Point SetTarget(int y, int x)
+                {
+                    var point = new Map.Point(y, x, 25);
+                    map.Target = point;
+
+                    return point;
+                }
+            });
+
+            map.StartingPoints.ForEach(point =>
+            {
+                currentPosition.Add(point);
+                visitedPlaces.Add(point, 0);
+            });
+
+            Solve(map, currentPosition, visitedPlaces);
+
+            return visitedPlaces[map.Target].ToString();
         }
 
         public async Task<string> PartTwo()
         {
-            var input = await _textFileReader.ReadAllTextAsync("./202212.txt");
+            var input = await _textFileReader.ReadAllLinesAsync("./202212.txt");
 
-            throw new NotImplementedException();
-        }
+            List<Map.Point> currentPosition = new();
+            Dictionary<Map.Point, int> visitedPlaces = new();
 
-        private int GetHeightForLetter(char letter)
-        {
-            if (_aplhabet.Contains(letter)) return _aplhabet.IndexOf(letter);
-            else if (letter == _startingPoint) return _aplhabet.IndexOf('a');
-            else if (letter == _targetPoint) return _aplhabet.IndexOf('z');
-            throw new ArgumentOutOfRangeException();
-        }
-
-        public T[,] JaggedToMultidimensional<T>(T[][] jaggedArray)
-        {
-            int rows = jaggedArray.Length;
-            int cols = jaggedArray.Max(subArray => subArray.Length);
-            T[,] array = new T[rows, cols];
-            for (int i = 0; i < rows; i++)
+            var map = ParseMap(input, (y, x, value, map) =>
             {
-                cols = jaggedArray[i].Length;
-                for (int j = 0; j < cols; j++)
+                return value switch
                 {
-                    array[i, j] = jaggedArray[i][j];
+                    'a' => SetStart(y, x),
+                    _startingPoint => SetStart(y, x),
+                    _targetPoint => SetTarget(y, x),
+                    _ => new Map.Point(y, x, value - 'a')
+                };
+
+                Map.Point SetStart(int y, int x)
+                {
+                    var point = new Map.Point(y, x, 0);
+                    map.StartingPoints.Add(point);
+
+                    return point;
+                }
+
+                Map.Point SetTarget(int y, int x)
+                {
+                    var point = new Map.Point(y, x, 25);
+                    map.Target = point;
+
+                    return point;
+                }
+            });
+
+            map.StartingPoints.ForEach(point =>
+            {
+                currentPosition.Add(point);
+                visitedPlaces.Add(point, 0);
+            });
+
+            Solve(map, currentPosition, visitedPlaces);
+
+            return visitedPlaces[map.Target].ToString();
+        }
+
+        public Map ParseMap(IReadOnlyList<string> input, Func<int, int, char, Map, Map.Point> mappingFunc)
+        {
+            var map = new Map();
+
+            map.Value = new Map.Point[input.Count, input[0].Length];
+
+            for (int y = 0; y < input.Count; y++)
+            {
+                for (int x = 0; x < input[0].Length; x++)
+                {
+                    var value = input[y][x];
+
+                    map.Value[y, x] = mappingFunc.Invoke(y, x, value, map);
                 }
             }
-            return array;
+
+            return map;
         }
 
-        public Point FindPoint(char[,] map, char letter)
+        public IEnumerable<(int y, int x)> GetMoves(Map.Point currentPoint)
         {
-            for (int y = 0; y < map.GetLength(0); y++)
+            yield return new(currentPoint.Y, currentPoint.X - 1);
+            yield return new(currentPoint.Y, currentPoint.X + 1);
+            yield return new(currentPoint.Y - 1, currentPoint.X);
+            yield return new(currentPoint.Y + 1, currentPoint.X);
+        }
+
+        public void Solve(Map map, List<Map.Point> currentPosition, Dictionary<Map.Point,int> visitedPlaces)
+        {
+            while (!visitedPlaces.ContainsKey(map.Target))
             {
-                for (int x = 0; x < map.GetLength(1); x++)
+                var copyOfCurrentPositions = currentPosition.ToList();
+
+                for (int i = 0; i < copyOfCurrentPositions.Count; i++)
                 {
-                    if (map[y, x] == letter)
+                    var position = currentPosition[i];
+
+                    var currentDistance = visitedPlaces[position];
+                    var currentPostionHeight = position.Height;
+
+                    foreach (var move in GetMoves(position))
                     {
-                        return new Point(x, y);
+                        var newY = move.y;
+                        var newX = move.x;
+
+                        if (!map.CanMove(newY, newX)) continue; //check if the new location is off the map
+
+                        var newPosition = map.Value[newY, newX]; //get new position point on map
+
+                        if (visitedPlaces.ContainsKey(newPosition)) continue; //check if the place has already been visited
+
+                        if (newPosition.Height > currentPostionHeight + 1) continue; //check the height of the new position
+
+                        currentPosition.Add(newPosition);
+                        visitedPlaces.Add(newPosition, currentDistance + 1);
                     }
                 }
-            }
 
-            throw new ApplicationException("Map does not contain starting point");
+                currentPosition.RemoveAll(x => copyOfCurrentPositions.Contains(x)); //remove all recently checked points
+
+            }
         }
 
-        public IEnumerable<HashSet<Point>> FindShortestPath(char[,] map, Point startingPoint, Point targetPoint, HashSet<Point> visitedPoints)
+        public class Map
         {
-            var newPath = visitedPoints;
+            public Point[,] Value { get; set; }
 
-            var currentPoint = startingPoint;
+            public int Width => Value.GetLength(1);
+            public int Height => Value.GetLength(0);
 
-            newPath.Add(currentPoint);
+            public List<Point> StartingPoints { get; set; } = new();
+            public Point Target { get; set; }
 
-            var moves = new[] {
-                    new Point(currentPoint.X, currentPoint.Y - 1),
-                    new Point(currentPoint.X, currentPoint.Y + 1),
-                    new Point(currentPoint.X - 1, currentPoint.Y),
-                    new Point(currentPoint.X + 1, currentPoint.Y)
-                }
-            .Where(point => point.Y > -1
-                            && point.X > -1
-                            && point.Y < map.GetLength(0)
-                            && point.X < map.GetLength(1)
-                            && newPath.Contains(point) == false)
-            .ToArray();
-
-            var possibleMoves = moves.Select(point => new
+            public bool CanMove(int y, int x)
             {
-                Point = point,
-                Height = GetHeightForLetter(map[point.Y, point.X]),
-                Distance = Math.Abs(targetPoint.X - point.X) + Math.Abs(targetPoint.Y - point.Y)
-            }).Where(point =>
-            {
-                var currentPointHeight = GetHeightForLetter(map[currentPoint.Y, currentPoint.X]);
-
-                return Math.Abs(point.Height - currentPointHeight) <= 1;
-            }).ToArray();
-
-            foreach (var possibleMove in possibleMoves)
-            {
-                foreach (var path in FindShortestPath(map, possibleMove.Point, targetPoint, newPath))
-                {
-                    yield return path;
-                }
+                return !(x < 0 || y < 0 || x >= Width || y >= Height);
             }
 
+            public record Point(int Y, int X, int Height);
         }
     }
 }
