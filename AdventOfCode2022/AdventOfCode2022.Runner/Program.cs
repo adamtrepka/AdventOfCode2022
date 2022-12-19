@@ -20,3 +20,5 @@ foreach (var solver in solvers)
     _ = await solver.PartOne();
     _ = await solver.PartTwo();
 }
+
+Console.ReadLine();

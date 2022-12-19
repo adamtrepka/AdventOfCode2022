@@ -1,14 +1,17 @@
 ﻿using AdventOfCode2022.Common;
 using AdventOfCode2022.Common.Abstraction;
 using AdventOfCode2022.Common.Extensions;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data.SqlTypes;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using static AdventOfCode2022.Day._16.Solver;
 
 namespace AdventOfCode2022.Day._16
@@ -26,103 +29,50 @@ namespace AdventOfCode2022.Day._16
 
         public async Task<string> PartOne()
         {
-            var maxPreasure = 0;
             var input = await _textFileReader.ReadAllLinesAsync("./202216.txt");
 
             var scan = Parse(input).ToList();
 
-            var nonZero = scan.Where(x => x.FlowRate > 0 && x.Name != "AA").ToList();
+            var importantValves = scan.Where(x => x.FlowRate > 0);
+            var startValve = scan.First(x => x.Name == "AA");
 
-            foreach (var permutation in Permutate(nonZero, nonZero.Count()))
+            int maxPreasure = 0;
+
+            Search(startValve, importantValves, (30, 0));
+
+            void Search(Valve from, IEnumerable<Valve> targets, (int time, int preasure) previous)
             {
-                var releasedPreasure = 0;
-                var moves = new Queue<Valve>(permutation);
-                var currentValue = scan.First(x => x.Name.Equals("AA"));
-                var selectedPath = new Queue<Valve>(FindShortestPath(currentValue, moves.Dequeue()));
-
-                for (int i = 0; i < 30; i++)
+                foreach (var target in targets)
                 {
-                    releasedPreasure += GetFlowForOpenedValves(scan);
-                    if (selectedPath?.Count > 0)
+                    var move = Move(from, target, previous);
+                    if (move.time >= 0)
                     {
-                        currentValue = selectedPath.Dequeue();
-                    }
-                    else if (selectedPath is not null)
-                    {
-                        currentValue.IsOpened = true;
-                        if (moves.Count > 0)
+                        if (move.preasure > maxPreasure)
                         {
-                            selectedPath = new Queue<Valve>(FindShortestPath(currentValue, moves.Dequeue()));
+                            maxPreasure = move.preasure;
                         }
-                        else
+
+                        if(targets.Any())
                         {
-                            selectedPath = null;
+                            Search(target, targets.Where(x => x.Name != target.Name), move);
                         }
                     }
                 }
+            }
 
-                scan.ForEach(x => x.IsOpened = false);
+            (int time, int preasure) Move(Valve from, Valve to, (int time, int preasure) previous)
+            {
 
-                if (maxPreasure < releasedPreasure)
-                {
-                    maxPreasure = releasedPreasure;
-                }
+                var path = FindShortestPath(from, to);
+
+                var newTime = previous.time - path.Count - 1;
+                var newPreasure = previous.preasure + (newTime * to.FlowRate);
+
+                return (newTime, newPreasure);
             }
 
             return maxPreasure.ToString();
-            //var releasedPreasure = 0;
-
-            //var currentValve = scan.First(x => x.Name.Equals("AA"));
-            //var selectedPath = GetPath(currentValve,releasedPreasure,minutesToLeft,0, GetFlowForOpenedValves(scan));
-
-
-            //for (int i = 0; i < minutesToLeft; i++)
-            //{
-            //    UpdateReleasedPreasure();
-            //    if (selectedPath?.Count > 0)
-            //    {
-            //        currentValve = selectedPath.Dequeue();
-            //    }
-            //    else if (selectedPath is not null)
-            //    {
-            //        currentValve.IsOpened = true;
-            //        selectedPath = GetPath(currentValve, releasedPreasure, minutesToLeft, i, GetFlowForOpenedValves(scan));
-            //    }
-            //}
-
-            //return releasedPreasure.ToString();
-
-            void UpdateReleasedPreasure()
-            {
-                //releasedPreasure += GetFlowForOpenedValves(scan);
-            }
-
-            Queue<Valve> GetPath(Valve start, int preasure, int limit, int minute, int flow)
-            {
-                var currentCostValue = preasure + (limit - minute) * flow;
-
-                var paths = scan.Where(x => x.IsOpened == false && x.FlowRate > 0 && x != start)
-                .Select(valve => (End: valve, Path: FindShortestPath(start, valve)))
-                .Select(x => (End: x.End, Path: x.Path, Cost: CountCost(x.End, x.Path.Count)))
-                .OrderByDescending(x => x.Cost);
-
-                var selectedPath = paths?.FirstOrDefault().Path?.Where(x => x != start);
-
-                int CountCost(Valve end, int count)
-                {
-                    var newMinute = minute + count;
-                    var newPressure = preasure + (count * end.FlowRate);
-                    var newFlow = flow + end.FlowRate;
-                    var cost = newPressure + ((limit - newMinute) * newFlow);
-                    return (cost - currentCostValue) / count;
-                    //return end.FlowRate / count;
-                }
-
-                return selectedPath is not null ? new Queue<Valve>(selectedPath) : null;
-            }
         }
-
-
 
         public async Task<string> PartTwo()
         {
@@ -140,8 +90,7 @@ namespace AdventOfCode2022.Day._16
                 var match = regex.Match(line);
                 result.Add(new Valve(match.Groups["name"].Value,
                                        int.Parse(match.Groups["flowRate"].Value),
-                                       match.Groups["valves"].Value.Split(",").Select(v => v.Trim()).ToList(),
-                                       false));
+                                       match.Groups["valves"].Value.Split(",").Select(v => v.Trim()).ToList()));
             }
 
             foreach (var valve in result)
@@ -150,11 +99,6 @@ namespace AdventOfCode2022.Day._16
             }
 
             return result;
-        }
-
-        public int GetFlowForOpenedValves(List<Valve> valves)
-        {
-            return valves.Where(x => x.IsOpened).Sum(x => x.FlowRate);
         }
 
         public List<Valve> FindShortestPath(Valve start, Valve end)
@@ -222,7 +166,7 @@ namespace AdventOfCode2022.Day._16
 
                 currentNode = prevNodes[currentNode];
             }
-            path.Add(start);
+            //path.Add(start);
 
             path.Reverse();
 
@@ -231,40 +175,17 @@ namespace AdventOfCode2022.Day._16
 
         public record Valve
         {
-            public Valve(string Name, int FlowRate, List<string> AvailableValvesNames, bool IsOpened)
+            public Valve(string Name, int FlowRate, List<string> AvailableValvesNames)
             {
                 this.Name = Name;
                 this.FlowRate = FlowRate;
                 this.AvailableValvesNames = AvailableValvesNames;
-                this.IsOpened = IsOpened;
             }
 
             public string Name { get; set; }
             public int FlowRate { get; set; }
             public List<string> AvailableValvesNames { get; set; }
-            public bool IsOpened { get; set; }
             public IEnumerable<Valve> AvailableValves { get; set; }
-        }
-
-        public void RotateRight<T>(IList<T> sequence, int count)
-        {
-            T tmp = sequence[count - 1];
-            sequence.RemoveAt(count - 1);
-            sequence.Insert(0, tmp);
-        }
-
-        public IEnumerable<IList<T>> Permutate<T>(IList<T> sequence, int count)
-        {
-            if (count == 1) yield return sequence;
-            else
-            {
-                for (int i = 0; i < count; i++)
-                {
-                    foreach (var perm in Permutate(sequence, count - 1))
-                        yield return perm;
-                    RotateRight(sequence, count);
-                }
-            }
         }
     }
 }
