@@ -36,6 +36,14 @@ namespace AdventOfCode2022.Day._16
             var importantValves = scan.Where(x => x.FlowRate > 0);
             var startValve = scan.First(x => x.Name == "AA");
 
+            var distances = new Dictionary<(Valve start, Valve end), int>();
+
+            foreach(var start in scan.Where(x => x.Name == "AA" || x.FlowRate > 0))
+            foreach(var end in scan.Where(x => x.Name == "AA" || x.FlowRate > 0))
+                {
+                    distances.Add((start, end), FindShortestPath(start, end).Count);
+                }
+
             int maxPreasure = 0;
 
             Search(startValve, importantValves, (30, 0));
@@ -52,7 +60,7 @@ namespace AdventOfCode2022.Day._16
                             maxPreasure = move.preasure;
                         }
 
-                        if(targets.Any())
+                        if(targets.Count() > 1)
                         {
                             Search(target, targets.Where(x => x.Name != target.Name), move);
                         }
@@ -63,9 +71,8 @@ namespace AdventOfCode2022.Day._16
             (int time, int preasure) Move(Valve from, Valve to, (int time, int preasure) previous)
             {
 
-                var path = FindShortestPath(from, to);
-
-                var newTime = previous.time - path.Count - 1;
+                var path = distances[(from, to)];
+                var newTime = previous.time - path - 1;
                 var newPreasure = previous.preasure + (newTime * to.FlowRate);
 
                 return (newTime, newPreasure);
@@ -77,7 +84,60 @@ namespace AdventOfCode2022.Day._16
         public async Task<string> PartTwo()
         {
             var input = await _textFileReader.ReadAllLinesAsync("./202216.txt");
-            throw new NotImplementedException();
+
+            var scan = Parse(input).ToList();
+
+            var importantValves = scan.Where(x => x.FlowRate > 0);
+            var startValve = scan.First(x => x.Name == "AA");
+
+            var distances = new Dictionary<(Valve start, Valve end), int>();
+
+            foreach (var start in scan.Where(x => x.Name == "AA" || x.FlowRate > 0))
+                foreach (var end in scan.Where(x => x.Name == "AA" || x.FlowRate > 0))
+                {
+                    distances.Add((start, end), FindShortestPath(start, end).Count);
+                }
+
+            int maxPreasure = 0;
+
+            Search(startValve, importantValves, (26, 0),false);
+
+            void Search(Valve from, IEnumerable<Valve> targets, (int time, int preasure) previous, bool elephant)
+            {
+                foreach (var target in targets)
+                {
+                    var move = Move(from, target, previous);
+                    if (move.time >= 0)
+                    {
+                        if (move.preasure > maxPreasure)
+                        {
+                            maxPreasure = move.preasure;
+                        }
+                        
+
+                        if (targets.Count() > 1)
+                        {
+                            Search(target, targets.Where(x => x.Name != target.Name), move,elephant);
+                        }
+                    }
+                    else if(!elephant && previous.preasure >= maxPreasure / 2)
+                    {
+                        Search(startValve, targets, (26, previous.preasure),true);
+                    }
+                }
+            }
+
+            (int time, int preasure) Move(Valve from, Valve to, (int time, int preasure) previous)
+            {
+
+                var path = distances[(from, to)];
+                var newTime = previous.time - path - 1;
+                var newPreasure = previous.preasure + (newTime * to.FlowRate);
+
+                return (newTime, newPreasure);
+            }
+
+            return maxPreasure.ToString();
         }
 
         public List<Valve> Parse(string[] input)
